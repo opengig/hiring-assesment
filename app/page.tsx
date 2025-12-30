@@ -14,12 +14,34 @@ export default function EmployeesPage() {
 	const [limit] = useState(10);
 	const [search, setSearch] = useState('');
 	const [department, setDepartment] = useState('');
+	const [refresh, setRefresh] = useState(0)
 
-	const { employees, loading } = useEmployees({ page, limit, search, department });
+
+	const { employees, loading } = useEmployees({ page, limit, search, department,refresh });
 
 	useEffect(() => {
 		setPage(1);
 	}, [search]);
+
+	const updateEmployeeStatus = async (id : string, value : Boolean) => {
+		let status = ""
+		if(value === false){
+			status = "INACTIVE"
+		}else{
+			status = "ACTIVE"
+		}
+		await fetch("/api/employees",{
+			method:"PATCH",
+			body : JSON.stringify({
+				id,
+				status
+			})
+		})
+
+		//im doint this to automatically refetch otherwise the status will not be updated
+		setRefresh( 1 - refresh)
+
+	}
 
 	const departments = ['Engineering', 'Sales', 'Marketing', 'HR', 'Finance', 'Legal'];
 
@@ -100,7 +122,12 @@ export default function EmployeesPage() {
 									<TableCell>{employee.role}</TableCell>
 									<TableCell>{employee.department}</TableCell>
 									<TableCell>
-										<Switch />
+										<Switch 
+											checked={employee.status === "ACTIVE"}
+											onCheckedChange={(value) => {
+												updateEmployeeStatus(employee.id, value)
+											}}
+											/>
 									</TableCell>
 									<TableCell>{new Date(employee.createdAt).toLocaleDateString()}</TableCell>
 								</TableRow>
