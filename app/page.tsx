@@ -16,10 +16,40 @@ export default function EmployeesPage() {
 	const [department, setDepartment] = useState('');
 
 	const { employees, loading } = useEmployees({ page, limit, search, department });
+	const [nEmployees, setnEmployees] = useState(employees);
 
 	useEffect(() => {
 		setPage(1);
-	}, [search]);
+	}, [search, department]);
+
+	useEffect(() => {
+		setnEmployees(employees);
+	}, [employees]);
+
+	const handleStatusToggle = async (employeeId: string, currentStatus: 'ACTIVE' | 'INACTIVE') => {
+		const newStatus = currentStatus === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE';
+
+		setnEmployees((prevEmployees) =>
+			prevEmployees.map((employee) => (employee.id === employeeId ? { ...employee, status: newStatus } : employee))
+		);
+
+		try {
+			const response = await fetch('/api/employees', {
+				method: 'PATCH',
+				body: JSON.stringify({
+					id: employeeId,
+					status: newStatus,
+				}),
+			});
+
+			if (!response.ok) {
+				const error = await response.json();
+				console.error(error);
+			}
+		} catch (error) {
+			console.error(error);
+		}
+	};
 
 	const departments = ['Engineering', 'Sales', 'Marketing', 'HR', 'Finance', 'Legal'];
 
@@ -34,7 +64,7 @@ export default function EmployeesPage() {
 						onChange={(e) => setSearch(e.target.value)}
 						className='w-full md:w-[300px]'
 					/>
-					<Select value={department} onValueChange={setDepartment}>
+					<Select value={department || 'all'} onValueChange={(value) => setDepartment(value === 'all' ? '' : value)}>
 						<SelectTrigger className='w-full md:w-[200px]'>
 							<SelectValue placeholder='All Departments' />
 						</SelectTrigger>
@@ -86,21 +116,24 @@ export default function EmployeesPage() {
 									</TableCell>
 								</TableRow>
 							))
-						) : employees.length === 0 ? (
+						) : nEmployees.length === 0 ? (
 							<TableRow>
 								<TableCell colSpan={6} className='h-24 text-center'>
 									No results.
 								</TableCell>
 							</TableRow>
 						) : (
-							employees.map((employee) => (
+							nEmployees.map((employee) => (
 								<TableRow key={employee.id}>
 									<TableCell>{employee.name}</TableCell>
 									<TableCell>{employee.email}</TableCell>
 									<TableCell>{employee.role}</TableCell>
 									<TableCell>{employee.department}</TableCell>
 									<TableCell>
-										<Switch />
+										<Switch
+											checked={employee.status === 'ACTIVE'}
+											onCheckedChange={() => handleStatusToggle(employee.id, employee.status)}
+										/>
 									</TableCell>
 									<TableCell>{new Date(employee.createdAt).toLocaleDateString()}</TableCell>
 								</TableRow>
