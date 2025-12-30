@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { Prisma } from '@prisma/client';
+import { Prisma, EmployeeStatus } from '@prisma/client';
 
 export async function GET(request: Request) {
 	try {
@@ -48,6 +48,33 @@ export async function GET(request: Request) {
 			data: employees,
 			page,
 			limit,
+		});
+	} catch {
+		return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+	}
+}
+
+export async function PATCH(request: Request) {
+	try {
+		const body = await request.json();
+		const { id, status } = body;
+
+		if (!id) {
+			return NextResponse.json({ error: 'Employee ID is required' }, { status: 400 });
+		}
+
+		if (!status || (status !== 'ACTIVE' && status !== 'INACTIVE')) {
+			return NextResponse.json({ error: 'Status must be either ACTIVE or INACTIVE' }, { status: 400 });
+		}
+
+		const employee = await prisma.employee.update({
+			where: { id },
+			data: { status: status as EmployeeStatus },
+		});
+
+		return NextResponse.json({
+			data: employee,
+			message: 'Employee status updated successfully',
 		});
 	} catch {
 		return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });

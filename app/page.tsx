@@ -21,6 +21,27 @@ export default function EmployeesPage() {
 		setPage(1);
 	}, [search, department]);
 
+	const handleStatusToggle = async (employeeId: string, currentStatus: 'ACTIVE' | 'INACTIVE') => {
+		const newStatus = currentStatus === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE';
+
+		try {
+			const response = await fetch('/api/employees', {
+				method: 'PATCH',
+				body: JSON.stringify({
+					id: employeeId,
+					status: newStatus,
+				}),
+			});
+
+			if (!response.ok) {
+				const error = await response.json();
+				console.error(error);
+			}
+		} catch (error) {
+			console.error(error);
+		}
+	};
+
 	const departments = ['Engineering', 'Sales', 'Marketing', 'HR', 'Finance', 'Legal'];
 
 	return (
@@ -100,7 +121,10 @@ export default function EmployeesPage() {
 									<TableCell>{employee.role}</TableCell>
 									<TableCell>{employee.department}</TableCell>
 									<TableCell>
-										<Switch />
+										<Switch
+											checked={employee.status === 'ACTIVE'}
+											onCheckedChange={() => handleStatusToggle(employee.id, employee.status)}
+										/>
 									</TableCell>
 									<TableCell>{new Date(employee.createdAt).toLocaleDateString()}</TableCell>
 								</TableRow>

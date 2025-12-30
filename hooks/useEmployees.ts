@@ -6,6 +6,7 @@ interface Employee {
 	email: string;
 	role: string;
 	department: string;
+	status: 'ACTIVE' | 'INACTIVE';
 	createdAt: string;
 }
 
@@ -20,7 +21,7 @@ export function useEmployees({ page, limit, search, department }: UseEmployeesPr
 	const [employees, setEmployees] = useState<Employee[]>([]);
 	const [loading, setLoading] = useState(false);
 
-	useEffect(() => {
+	const fetchEmployees = () => {
 		setLoading(true);
 
 		fetch(`/api/employees?page=${page}&limit=${limit}&search=${search}&department=${department}`)
@@ -29,6 +30,10 @@ export function useEmployees({ page, limit, search, department }: UseEmployeesPr
 				setEmployees(data.data);
 				setLoading(false);
 			});
+	};
+
+	useEffect(() => {
+		fetchEmployees();
 	}, [page, search, department, limit]);
 
 	return { employees, loading };
